@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -41,19 +42,110 @@ public class BasicItemController {
         return "basic/addForm";
     }
 
-    @PostMapping("/add")
-    public String save(@RequestParam) {
-        return "basic/addForm";
+//    @PostMapping("/add")
+    public String addItemV1(@RequestParam String itemName,
+                       @RequestParam int price,
+                       @RequestParam Integer quantity,
+                       Model model) {
+
+        Item item = new Item();
+        item.setItemName(itemName);
+        item.setPrice(price);
+        item.setQuantity(quantity);
+
+        itemRepository.save(item);
+
+        model.addAttribute("item", item);
+
+        return "basic/item";
+    }
+
+//    @PostMapping("/add")
+    public String addItemV2(@ModelAttribute("item") Item item) {
+
+
+        itemRepository.save(item);
+
+        //@ModelAttribute will make and put "item" to the model
+//        model.addAttribute("item", item);
+
+        return "basic/item";
+    }
+
+//    @PostMapping("/add")
+    public String addItemV3(@ModelAttribute Item item) {
+
+
+        itemRepository.save(item);
+        return "basic/item";
+    }
+
+//    @PostMapping("/add")
+    public String addItemV4(Item item) {
+        itemRepository.save(item);
+        return "basic/item";
+    }
+
+    //Have to use redirect!
+    //PRG, Post, Redirect, Get
+    //Still not a good practice to string concat url without formatting (encoding)
+//    @PostMapping("/add")
+    public String addItemV5(Item item) {
+        itemRepository.save(item);
+        return "redirect:/basic/items/" + item.getId();
     }
 
 
 
-    @PatchMapping("/{itemId}/edit")
-    public String editItem(@PathVariable long itemId, Model model) {
+    //Redirect Attribute
+    //Solves all the problem
+    //Also add status parameter so that html can deal with modals, etc
+    @PostMapping("/add")
+    public String addItemV6(Item item, RedirectAttributes redirectAttributes) {
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/basic/items/{itemId}";
+    }
+
+
+    @GetMapping("/{itemId}/edit")
+    public String editForm(@PathVariable long itemId, Model model) {
         Item item = itemRepository.findById(itemId);
         model.addAttribute("item", item);
-        return "basic/item";
+        return "basic/editForm";
+    }
 
+//    @PostMapping("/{itemId}/edit")
+    public String editItemV1(Item item) {
+        Item foundItem = itemRepository.findById(item.getId());
+
+        foundItem.setItemName(item.getItemName());
+        foundItem.setPrice(item.getPrice());
+        foundItem.setQuantity(item.getQuantity());
+
+        itemRepository.update(item.getId(),item);
+        return "basic/item";
+    }
+
+
+//    @PostMapping("/{itemId}/edit")
+    public String editItemV2(Item item) {
+        itemRepository.update(item.getId(),item);
+        return "basic/item";
+    }
+
+//    something wrong with this code
+//    @PostMapping("/{itemId}/edit")
+    public String editItemV3(Item item) {
+        itemRepository.update(item.getId(),item);
+        return "redirect:/basic/items/{itemId}";
+    }
+
+    @PostMapping("/{itemId}/edit")
+    public String editItemV4(@PathVariable long itemId, @ModelAttribute Item item) {
+        itemRepository.update(itemId,item);
+        return "redirect:/basic/items/{itemId}";
     }
 
 
